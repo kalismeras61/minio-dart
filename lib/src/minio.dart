@@ -1182,14 +1182,24 @@ class Minio {
   }
 
   /// Stat information of the object.
-  Future<StatObjectResult> statObject(String bucket, String object) async {
+  Future<StatObjectResult> statObject(String bucket, String object, {String? versionId}) async {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidObjectNameError.check(object);
 
+    final queries = <String, String>{};
+
+    if (versionId != null) {
+      queries['versionId'] = versionId;
+    }
+
     final resp = await _client.request(
-      method: 'HEAD',
-      bucket: bucket,
-      object: object,
+        method: 'HEAD',
+        bucket: bucket,
+        object: object,
+        region: null,
+        resource: null,
+        payload: '',
+        queries: queries
     );
 
     validate(resp, expect: 200);
