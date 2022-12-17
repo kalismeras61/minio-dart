@@ -905,6 +905,10 @@ class DeleteMarkerEntry {
 
   /// Version ID of an object.
   String? versionId;
+
+  String toString() {
+    return 'DeleteMarkerEntry{isLatest: $isLatest, key: $key, lastModified: $lastModified, owner: $owner, versionId: $versionId}';
+  }
 }
 
 /// Specifies whether Amazon S3 replicates the delete markers. If you specify a Filter, you must specify this element. However, in the latest version of replication configuration (when Filter is specified), Amazon S3 doesn't replicate delete markers. Therefore, the DeleteMarkerReplication element can contain only <Status>Disabled</Status>. For an example configuration, see Basic Rule Configuration.
@@ -2483,6 +2487,10 @@ class ObjectVersion {
 
   /// Version ID of an object.
   String? versionId;
+
+  String toString() {
+    return 'ObjectVersion{eTag: $eTag, isLatest: $isLatest, key: $key, lastModified: $lastModified, owner: $owner, size: $size, storageClass: $storageClass, versionId: $versionId}';
+  }
 }
 
 /// Describes the location where the restore job's output is stored.

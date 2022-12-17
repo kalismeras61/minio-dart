@@ -23,6 +23,22 @@ class ListObjectsResult {
   }
 }
 
+class ListVersionsResult {
+  ListVersionsResult({
+    required this.versions,
+    required this.deleteMarkers,
+  });
+
+  final List<ObjectVersion> versions;
+
+  final List<DeleteMarkerEntry> deleteMarkers;
+
+  @override
+  String toString() {
+    return '$runtimeType{versions: $versions, deleteMarkers: $deleteMarkers}';
+  }
+}
+
 class ListObjectsOutput {
   bool? isTruncated;
   String? nextMarker;
@@ -35,6 +51,14 @@ class ListObjectsV2Output {
   String? nextContinuationToken;
   List<Object>? contents;
   late List<CommonPrefix> commonPrefixes;
+}
+
+class ListObjectVersionsOutput {
+  bool? isTruncated;
+  String? nextKeyMarker;
+  String? nextVersionIdMarker;
+  late List<ObjectVersion> versions;
+  late List<DeleteMarkerEntry> deleteMarkers;
 }
 
 class CompleteMultipartUpload {

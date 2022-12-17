@@ -621,6 +621,40 @@ class Minio {
     } while (isTruncated!);
   }
 
+  Stream<ListVersionsResult> listObjectVersions(
+      String bucket, {
+        String prefix = '',
+        bool recursive = false,
+      }) async* {
+    MinioInvalidBucketNameError.check(bucket);
+    MinioInvalidPrefixError.check(prefix);
+    final delimiter = recursive ? '' : '/';
+
+    bool? isTruncated = false;
+
+    String? nextKeyMarker;
+    String? nextVersionIdMarker;
+
+    do {
+      final resp = await listObjectVersionsQuery(
+        bucket,
+        prefix,
+        nextKeyMarker,
+        nextVersionIdMarker,
+        delimiter,
+        1000,
+      );
+      isTruncated = resp.isTruncated;
+      nextKeyMarker = resp.nextKeyMarker;
+      nextVersionIdMarker = resp.nextVersionIdMarker;
+
+      yield ListVersionsResult(
+        versions: resp.versions,
+        deleteMarkers: resp.deleteMarkers,
+      );
+    } while (isTruncated!);
+  }
+
   /// Returns all [Object]s in a bucket. This is a shortcut for [listObjectsV2].
   /// Use [listObjects] to list buckets with a large number of objects.
   /// This uses ListObjectsV2 in the S3 API. For backward compatibility, use
@@ -695,6 +729,60 @@ class Minio {
       ..commonPrefixes = prefixes.toList()
       ..isTruncated = isTruncated.toLowerCase() == 'true'
       ..nextContinuationToken = nextContinuationToken;
+  }
+
+  Future<ListObjectVersionsOutput> listObjectVersionsQuery(
+      String bucket,
+      String prefix,
+      String? keyMarker,
+      String? versionIdMaker,
+      String delimiter,
+      int? maxKeys,
+      ) async {
+    MinioInvalidBucketNameError.check(bucket);
+    MinioInvalidPrefixError.check(prefix);
+
+    final queries = <String, dynamic>{};
+    queries['prefix'] = prefix;
+    queries['delimiter'] = delimiter;
+    queries['versions'] = '';
+
+    if (keyMarker != null) {
+      queries['key-marker'] = keyMarker;
+    }
+
+    if (versionIdMaker != null) {
+      queries['version-id-marker'] = versionIdMaker;
+    }
+
+    if (maxKeys != null) {
+      maxKeys = maxKeys >= 1000 ? 1000 : maxKeys;
+      queries['maxKeys'] = maxKeys.toString();
+    }
+
+    final resp = await _client.request(
+      method: 'GET',
+      bucket: bucket,
+      queries: queries,
+    );
+
+    validate(resp);
+
+    final node = xml.XmlDocument.parse(resp.body);
+    final isTruncated = getNodeProp(node.rootElement, 'IsTruncated')!.text;
+
+
+    final nextKeyMarker = getNodeProp(node.rootElement, 'NextKeyMarker')?.text;
+    final nextVersionIdMarker = getNodeProp(node.rootElement, 'NextVersionIdMarker')?.text;
+    final versions = node.findAllElements('Version').map((c) => ObjectVersion.fromXml(c));
+    final deleteMarkers = node.findAllElements('DeleteMarker').map((c) => DeleteMarkerEntry.fromXml(c));
+
+    return ListObjectVersionsOutput()
+      ..versions = versions.toList()
+      ..deleteMarkers = deleteMarkers.toList()
+      ..isTruncated = isTruncated.toLowerCase() == 'true'
+      ..nextKeyMarker = nextKeyMarker
+      ..nextVersionIdMarker = nextVersionIdMarker;
   }
 
   /// Get part-info of all parts of an incomplete upload specified by uploadId.
