@@ -871,40 +871,39 @@ class DeleteMarkerEntry {
     this.versionId,
   );
 
-  DeleteMarkerEntry.fromXml(XmlElement xml) {
-    isLatest = getProp(xml, 'IsLatest')?.text.toUpperCase() == 'TRUE';
-    key = getProp(xml, 'Key')?.text;
-    lastModified = DateTime.parse(getProp(xml, 'LastModified')!.text);
-    owner = Owner.fromXml(getProp(xml, 'Owner'));
-    versionId = getProp(xml, 'VersionId')?.text;
-  }
+  DeleteMarkerEntry.fromXml(XmlElement xml) :
+        isLatest = getProp(xml, 'IsLatest')!.text.toUpperCase() == 'TRUE',
+        key = getProp(xml, 'Key')!.text,
+        lastModified = DateTime.parse(getProp(xml, 'LastModified')!.text),
+        owner = Owner.fromXml(getProp(xml, 'Owner')),
+        versionId = getProp(xml, 'VersionId')!.text;
 
   XmlNode toXml() {
     final builder = XmlBuilder();
     builder.element('DeleteMarkerEntry', nest: () {
-      builder.element('IsLatest', nest: isLatest! ? 'TRUE' : 'FALSE');
+      builder.element('IsLatest', nest: isLatest ? 'TRUE' : 'FALSE');
       builder.element('Key', nest: key);
-      builder.element('LastModified', nest: lastModified!.toIso8601String());
-      builder.element('Owner', nest: owner!.toXml());
+      builder.element('LastModified', nest: lastModified.toIso8601String());
+      builder.element('Owner', nest: owner.toXml());
       builder.element('VersionId', nest: versionId);
     });
     return builder.buildDocument();
   }
 
   /// Specifies whether the object is (true) or is not (false) the latest version of an object.
-  bool? isLatest;
+  bool isLatest;
 
   /// The object key.
-  String? key;
+  String key;
 
   /// Date and time the object was last modified.
-  DateTime? lastModified;
+  DateTime lastModified;
 
   /// The account that created the delete marker.>
-  Owner? owner;
+  Owner owner;
 
   /// Version ID of an object.
-  String? versionId;
+  String versionId;
 
   String toString() {
     return 'DeleteMarkerEntry{isLatest: $isLatest, key: $key, lastModified: $lastModified, owner: $owner, versionId: $versionId}';
@@ -2438,25 +2437,24 @@ class ObjectVersion {
     this.versionId,
   );
 
-  ObjectVersion.fromXml(XmlElement xml) {
-    eTag = getProp(xml, 'ETag')?.text;
-    isLatest = getProp(xml, 'IsLatest')?.text.toUpperCase() == 'TRUE';
-    key = getProp(xml, 'Key')?.text;
-    lastModified = DateTime.parse(getProp(xml, 'LastModified')!.text);
-    owner = Owner.fromXml(getProp(xml, 'Owner'));
-    size = int.tryParse(getProp(xml, 'Size')!.text);
-    storageClass = getProp(xml, 'StorageClass')?.text;
-    versionId = getProp(xml, 'VersionId')?.text;
-  }
+  ObjectVersion.fromXml(XmlElement xml) :
+        eTag = getProp(xml, 'ETag')!.text,
+        isLatest = getProp(xml, 'IsLatest')!.text.toUpperCase() == 'TRUE',
+        key = getProp(xml, 'Key')!.text,
+        lastModified = DateTime.parse(getProp(xml, 'LastModified')!.text),
+        owner = Owner.fromXml(getProp(xml, 'Owner')),
+        size = int.parse(getProp(xml, 'Size')!.text),
+        storageClass = getProp(xml, 'StorageClass')!.text,
+        versionId = getProp(xml, 'VersionId')!.text;
 
   XmlNode toXml() {
     final builder = XmlBuilder();
     builder.element('ObjectVersion', nest: () {
       builder.element('ETag', nest: eTag);
-      builder.element('IsLatest', nest: isLatest! ? 'TRUE' : 'FALSE');
+      builder.element('IsLatest', nest: isLatest ? 'TRUE' : 'FALSE');
       builder.element('Key', nest: key);
-      builder.element('LastModified', nest: lastModified!.toIso8601String());
-      builder.element('Owner', nest: owner!.toXml());
+      builder.element('LastModified', nest: lastModified.toIso8601String());
+      builder.element('Owner', nest: owner.toXml());
       builder.element('Size', nest: size.toString());
       builder.element('StorageClass', nest: storageClass);
       builder.element('VersionId', nest: versionId);
@@ -2465,28 +2463,28 @@ class ObjectVersion {
   }
 
   /// The entity tag is an MD5 hash of that version of the object.
-  String? eTag;
+  String eTag;
 
   /// Specifies whether the object is (true) or is not (false) the latest version of an object.
-  bool? isLatest;
+  bool isLatest;
 
   /// The object key.
-  String? key;
+  String key;
 
   /// Date and time the object was last modified.
-  DateTime? lastModified;
+  DateTime lastModified;
 
   /// Specifies the owner of the object.
-  Owner? owner;
+  Owner owner;
 
   /// Size in bytes of the object.
-  int? size;
+  int size;
 
   /// The class of storage used to store the object.
-  String? storageClass;
+  String storageClass;
 
   /// Version ID of an object.
-  String? versionId;
+  String versionId;
 
   String toString() {
     return 'ObjectVersion{eTag: $eTag, isLatest: $isLatest, key: $key, lastModified: $lastModified, owner: $owner, size: $size, storageClass: $storageClass, versionId: $versionId}';
