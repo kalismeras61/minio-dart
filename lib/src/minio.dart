@@ -947,10 +947,11 @@ class Minio {
     String bucket,
     String object, {
     int? expires,
+    Map<String, String>? reqHeaders,
   }) {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidObjectNameError.check(object);
-    return presignedUrl('PUT', bucket, object, expires: expires);
+    return presignedUrl('PUT', bucket, object, expires: expires, reqHeaders: reqHeaders);
   }
 
   /// Generate a generic presigned URL which can be
@@ -970,6 +971,7 @@ class Minio {
     String? resource,
     Map<String, String>? reqParams,
     DateTime? requestDate,
+    Map<String, String>? reqHeaders,
   }) async {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidObjectNameError.check(object);
@@ -981,6 +983,7 @@ class Minio {
     expires ??= expires = 24 * 60 * 60 * 7; // 7 days in seconds
     reqParams ??= {};
     requestDate ??= DateTime.now().toUtc();
+    reqHeaders ??= {};
 
     final region = await getBucketRegion(bucket);
     final request = _client.getBaseRequest(
@@ -990,7 +993,7 @@ class Minio {
       region,
       resource,
       reqParams,
-      {},
+      reqHeaders,
       null,
     );
     return presignSignatureV4(this, request, region, requestDate, expires);
