@@ -1220,4 +1220,20 @@ class Minio {
       acl: await getObjectACL(bucket, object),
     );
   }
+
+  Future<void> putBucketCors(String bucket, String xmlPayload) async {
+    MinioInvalidBucketNameError.check(bucket);
+
+    final headers = {'Content-MD5': md5Base64(xmlPayload)};
+
+    final resp = await _client.request(
+      method: 'PUT',
+      headers: headers,
+      bucket: bucket,
+      resource: 'cors',
+      payload: xmlPayload,
+    );
+
+    validate(resp, expect: 200);
+  }
 }
