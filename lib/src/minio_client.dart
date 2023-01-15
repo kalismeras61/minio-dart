@@ -140,7 +140,7 @@ class MinioClient {
 
     region ??= 'us-east-1';
 
-    final request = getBaseRequest(
+    var request = getBaseRequest(
         method, bucket, object, region, resource, queries, headers, onProgress);
     request.body = payload;
 
@@ -156,6 +156,12 @@ class MinioClient {
     request.headers['authorization'] = authorization;
 
     logRequest(request);
+
+    if (minio.corsProxy != null) {
+      final proxyUrl = Uri.parse("${minio.corsProxy}${request.url.toString().replaceAll('&', '%26')}");
+      request = request.replace(url: proxyUrl);
+    }
+
     final response = await request.send();
     return response;
   }

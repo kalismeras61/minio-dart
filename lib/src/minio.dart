@@ -26,6 +26,7 @@ class Minio {
     int? port,
     this.useSSL = true,
     this.sessionToken,
+    this.corsProxy,
     this.region,
     this.enableTrace = false,
   }) : port = port ?? implyPort(useSSL) {
@@ -77,6 +78,9 @@ class Minio {
 
   /// Set this value to override region cache. (Optional)
   final String? region;
+
+  /// CORS proxy (e.g. format https://cors.proxy?destinationParam=);
+  final String? corsProxy;
 
   /// Set this value to enable tracing. (Optional)
   final bool enableTrace;
