@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:http/http.dart';
+import 'package:cancellation_token_http/http.dart';
 import 'package:minio/minio.dart';
 import 'package:minio/src/minio_helpers.dart';
 import 'package:minio/src/minio_s3.dart';
@@ -133,6 +133,7 @@ class MinioClient {
     Map<String, dynamic>? queries,
     Map<String, String>? headers,
     void Function(int)? onProgress,
+    CancellationToken? cancellationToken
   }) async {
     if (bucket != null) {
       region ??= await minio.getBucketRegion(bucket);
@@ -162,7 +163,7 @@ class MinioClient {
       request = request.replace(url: proxyUrl);
     }
 
-    final response = await request.send();
+    final response = await request.send(cancellationToken: cancellationToken);
     return response;
   }
 
@@ -176,6 +177,7 @@ class MinioClient {
     Map<String, dynamic>? queries,
     Map<String, String>? headers,
     void Function(int)? onProgress,
+    CancellationToken? cancellationToken
   }) async {
     final stream = await _request(
       method: method,
@@ -187,6 +189,7 @@ class MinioClient {
       queries: queries,
       headers: headers,
       onProgress: onProgress,
+      cancellationToken: cancellationToken
     );
 
     final response = await MinioResponse.fromStream(stream);

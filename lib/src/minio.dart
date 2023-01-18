@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:cancellation_token_http/http.dart';
+
 import 'package:minio/models.dart';
 import 'package:minio/src/minio_client.dart';
 import 'package:minio/src/minio_errors.dart';
@@ -599,6 +601,7 @@ class Minio {
     String prefix = '',
     bool recursive = false,
     String? startAfter,
+    CancellationToken? cancellationToken,
   }) async* {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidPrefixError.check(prefix);
@@ -615,6 +618,7 @@ class Minio {
         delimiter,
         1000,
         startAfter,
+        cancellationToken
       );
       isTruncated = resp.isTruncated;
       continuationToken = resp.nextContinuationToken;
@@ -635,7 +639,8 @@ class Minio {
         bool recursive = false,
         String? startAfter,
         String? continuationToken,
-        int limit = 1000
+        int limit = 1000,
+        CancellationToken? cancellationToken,
       }) async {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidPrefixError.check(prefix);
@@ -650,6 +655,7 @@ class Minio {
       delimiter,
       limit,
       startAfter,
+      cancellationToken
     );
     isTruncated = resp.isTruncated;
     continuationToken = resp.nextContinuationToken;
@@ -726,6 +732,7 @@ class Minio {
     String delimiter,
     int? maxKeys,
     String? startAfter,
+    CancellationToken? cancellationToken
   ) async {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidPrefixError.check(prefix);
@@ -752,6 +759,7 @@ class Minio {
       method: 'GET',
       bucket: bucket,
       queries: queries,
+      cancellationToken: cancellationToken
     );
 
     validate(resp);

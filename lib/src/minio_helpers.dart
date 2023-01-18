@@ -1,5 +1,5 @@
 import 'package:convert/convert.dart';
-import 'package:http/http.dart';
+import 'package:cancellation_token_http/http.dart';
 import 'package:mime/mime.dart' show lookupMimeType;
 import 'package:minio/src/minio_client.dart';
 import 'package:minio/src/minio_errors.dart';
