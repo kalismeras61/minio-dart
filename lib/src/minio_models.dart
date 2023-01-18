@@ -9,6 +9,8 @@ class ListObjectsResult {
   ListObjectsResult({
     required this.objects,
     required this.prefixes,
+    this.continuationToken,
+    this.isTruncated
   });
 
   /// Metadata about each object returned.
@@ -16,6 +18,10 @@ class ListObjectsResult {
 
   /// Like directorys in a file system, prefixes are delimited by slashes.
   final List<String> prefixes;
+
+  String? continuationToken;
+
+  bool? isTruncated;
 
   @override
   String toString() {

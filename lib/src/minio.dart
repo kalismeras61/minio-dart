@@ -625,6 +625,43 @@ class Minio {
     } while (isTruncated!);
   }
 
+  /// Returns not paginated [Object]s in a bucket.
+  /// To list objects in a bucket with prefix, set [prefix] to the desired prefix.
+  /// This uses ListObjectsV2 in the S3 API. For backward compatibility, use
+  /// [listObjects] instead.
+  Future<ListObjectsResult> listObjectsV2NoPaginate(
+      String bucket, {
+        String prefix = '',
+        bool recursive = false,
+        String? startAfter,
+        String? continuationToken,
+        int limit = 1000
+      }) async {
+    MinioInvalidBucketNameError.check(bucket);
+    MinioInvalidPrefixError.check(prefix);
+    final delimiter = recursive ? '' : '/';
+
+    bool? isTruncated = false;
+
+    final resp = await listObjectsV2Query(
+      bucket,
+      prefix,
+      continuationToken,
+      delimiter,
+      limit,
+      startAfter,
+    );
+    isTruncated = resp.isTruncated;
+    continuationToken = resp.nextContinuationToken;
+
+    return ListObjectsResult(
+      objects: resp.contents!,
+      prefixes: resp.commonPrefixes.map((e) => e.prefix!).toList(),
+      continuationToken: continuationToken,
+      isTruncated: isTruncated,
+    );
+  }
+
   Stream<ListVersionsResult> listObjectVersions(
       String bucket, {
         String prefix = '',
