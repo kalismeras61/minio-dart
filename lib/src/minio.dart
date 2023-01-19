@@ -89,7 +89,7 @@ class Minio {
 
   /// creata a tag for object
   ///
-  Future<String> addObjectTag(
+  Future<void> addObjectTag(
     String bucket,
     String object,
     String key,
@@ -98,29 +98,17 @@ class Minio {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidObjectNameError.check(object);
 
-    final queries = {'tagging': value};
     final payload = Tagging(Tag(key, value)).toXml().toString();
 
     final resp = await _client.request(
       method: 'PUT',
       bucket: bucket,
       object: object,
-      queries: queries,
       payload: payload,
     );
 
     print(resp.body);
-    validate(resp, expect: 200);
-
-    final node = xml.XmlDocument.parse(resp.body);
-    final errorNode = node.findAllElements('Error');
-    if (errorNode.isNotEmpty) {
-      final error = Error.fromXml(errorNode.first);
-      throw MinioS3Error(error.message, error, resp);
-    }
-
-    final etag = node.findAllElements('ETag').first.text;
-    return etag;
+    validate(resp, expect: 204);
   }
 
   /// Checks if a bucket exists.
