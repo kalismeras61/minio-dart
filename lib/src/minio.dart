@@ -3,21 +3,18 @@ import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:cancellation_token_http/http.dart';
-
-import 'package:minio/models.dart';
-import 'package:minio/src/minio_client.dart';
-import 'package:minio/src/minio_errors.dart';
-import 'package:minio/src/minio_helpers.dart';
-import 'package:minio/src/minio_poller.dart';
-import 'package:minio/src/minio_sign.dart';
-import 'package:minio/src/minio_stream.dart';
-import 'package:minio/src/minio_uploader.dart';
-import 'package:minio/src/utils.dart';
 import 'package:xml/xml.dart' as xml;
 import 'package:xml/xml.dart' show XmlElement;
 
 import '../models.dart';
+import 'minio_client.dart';
+import 'minio_errors.dart';
 import 'minio_helpers.dart';
+import 'minio_poller.dart';
+import 'minio_sign.dart';
+import 'minio_stream.dart';
+import 'minio_uploader.dart';
+import 'utils.dart';
 
 class Minio {
   /// Initializes a new client object.
@@ -89,6 +86,42 @@ class Minio {
 
   late MinioClient _client;
   final _regionMap = <String?, String>{};
+
+  /// creata a tag for object
+  ///
+  Future<String> addObjectTag(
+    String bucket,
+    String object,
+    String key,
+    String value,
+  ) async {
+    MinioInvalidBucketNameError.check(bucket);
+    MinioInvalidObjectNameError.check(object);
+
+    final queries = {'tagging': value};
+    final payload = Tagging(Tag(key, value)).toXml().toString();
+
+    final resp = await _client.request(
+      method: 'PUT',
+      bucket: bucket,
+      object: object,
+      queries: queries,
+      payload: payload,
+    );
+
+    print(resp.body);
+    validate(resp, expect: 200);
+
+    final node = xml.XmlDocument.parse(resp.body);
+    final errorNode = node.findAllElements('Error');
+    if (errorNode.isNotEmpty) {
+      final error = Error.fromXml(errorNode.first);
+      throw MinioS3Error(error.message, error, resp);
+    }
+
+    final etag = node.findAllElements('ETag').first.text;
+    return etag;
+  }
 
   /// Checks if a bucket exists.
   ///
@@ -611,15 +644,8 @@ class Minio {
     String? continuationToken;
 
     do {
-      final resp = await listObjectsV2Query(
-        bucket,
-        prefix,
-        continuationToken,
-        delimiter,
-        1000,
-        startAfter,
-        cancellationToken
-      );
+      final resp = await listObjectsV2Query(bucket, prefix, continuationToken,
+          delimiter, 1000, startAfter, cancellationToken);
       isTruncated = resp.isTruncated;
       continuationToken = resp.nextContinuationToken;
       yield ListObjectsResult(
@@ -634,29 +660,22 @@ class Minio {
   /// This uses ListObjectsV2 in the S3 API. For backward compatibility, use
   /// [listObjects] instead.
   Future<ListObjectsResult> listObjectsV2NoPaginate(
-      String bucket, {
-        String prefix = '',
-        bool recursive = false,
-        String? startAfter,
-        String? continuationToken,
-        int limit = 1000,
-        CancellationToken? cancellationToken,
-      }) async {
+    String bucket, {
+    String prefix = '',
+    bool recursive = false,
+    String? startAfter,
+    String? continuationToken,
+    int limit = 1000,
+    CancellationToken? cancellationToken,
+  }) async {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidPrefixError.check(prefix);
     final delimiter = recursive ? '' : '/';
 
     bool? isTruncated = false;
 
-    final resp = await listObjectsV2Query(
-      bucket,
-      prefix,
-      continuationToken,
-      delimiter,
-      limit,
-      startAfter,
-      cancellationToken
-    );
+    final resp = await listObjectsV2Query(bucket, prefix, continuationToken,
+        delimiter, limit, startAfter, cancellationToken);
     isTruncated = resp.isTruncated;
     continuationToken = resp.nextContinuationToken;
 
@@ -669,10 +688,10 @@ class Minio {
   }
 
   Stream<ListVersionsResult> listObjectVersions(
-      String bucket, {
-        String prefix = '',
-        bool recursive = false,
-      }) async* {
+    String bucket, {
+    String prefix = '',
+    bool recursive = false,
+  }) async* {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidPrefixError.check(prefix);
     final delimiter = recursive ? '' : '/';
@@ -726,14 +745,13 @@ class Minio {
 
   /// listObjectsV2Query - (List Objects V2) - List some or all (up to 1000) of the objects in a bucket.
   Future<ListObjectsV2Output> listObjectsV2Query(
-    String bucket,
-    String prefix,
-    String? continuationToken,
-    String delimiter,
-    int? maxKeys,
-    String? startAfter,
-    CancellationToken? cancellationToken
-  ) async {
+      String bucket,
+      String prefix,
+      String? continuationToken,
+      String delimiter,
+      int? maxKeys,
+      String? startAfter,
+      CancellationToken? cancellationToken) async {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidPrefixError.check(prefix);
 
@@ -756,11 +774,10 @@ class Minio {
     }
 
     final resp = await _client.request(
-      method: 'GET',
-      bucket: bucket,
-      queries: queries,
-      cancellationToken: cancellationToken
-    );
+        method: 'GET',
+        bucket: bucket,
+        queries: queries,
+        cancellationToken: cancellationToken);
 
     validate(resp);
 
@@ -781,13 +798,13 @@ class Minio {
   }
 
   Future<ListObjectVersionsOutput> listObjectVersionsQuery(
-      String bucket,
-      String prefix,
-      String? keyMarker,
-      String? versionIdMaker,
-      String delimiter,
-      int? maxKeys,
-      ) async {
+    String bucket,
+    String prefix,
+    String? keyMarker,
+    String? versionIdMaker,
+    String delimiter,
+    int? maxKeys,
+  ) async {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidPrefixError.check(prefix);
 
@@ -820,11 +837,14 @@ class Minio {
     final node = xml.XmlDocument.parse(resp.body);
     final isTruncated = getNodeProp(node.rootElement, 'IsTruncated')!.text;
 
-
     final nextKeyMarker = getNodeProp(node.rootElement, 'NextKeyMarker')?.text;
-    final nextVersionIdMarker = getNodeProp(node.rootElement, 'NextVersionIdMarker')?.text;
-    final versions = node.findAllElements('Version').map((c) => ObjectVersion.fromXml(c));
-    final deleteMarkers = node.findAllElements('DeleteMarker').map((c) => DeleteMarkerEntry.fromXml(c));
+    final nextVersionIdMarker =
+        getNodeProp(node.rootElement, 'NextVersionIdMarker')?.text;
+    final versions =
+        node.findAllElements('Version').map((c) => ObjectVersion.fromXml(c));
+    final deleteMarkers = node
+        .findAllElements('DeleteMarker')
+        .map((c) => DeleteMarkerEntry.fromXml(c));
 
     return ListObjectVersionsOutput()
       ..versions = versions.toList()
@@ -1000,7 +1020,8 @@ class Minio {
   }) {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidObjectNameError.check(object);
-    return presignedUrl('PUT', bucket, object, expires: expires, reqHeaders: reqHeaders);
+    return presignedUrl('PUT', bucket, object,
+        expires: expires, reqHeaders: reqHeaders);
   }
 
   /// Generate a generic presigned URL which can be
@@ -1234,7 +1255,8 @@ class Minio {
   }
 
   /// Stat information of the object.
-  Future<StatObjectResult> statObject(String bucket, String object, {String? versionId}) async {
+  Future<StatObjectResult> statObject(String bucket, String object,
+      {String? versionId}) async {
     MinioInvalidBucketNameError.check(bucket);
     MinioInvalidObjectNameError.check(object);
 
@@ -1251,8 +1273,7 @@ class Minio {
         region: null,
         resource: null,
         payload: '',
-        queries: queries
-    );
+        queries: queries);
 
     validate(resp, expect: 200);
 
